@@ -136,6 +136,11 @@ public class MapView extends ViewGroup implements IMapView, MapViewConstants,
 	/* becomes true once onLayout has been called for the first time i.e. map is ready to go. */
 	private boolean mLayoutOccurred = false;
 
+	// Required for pinch-zoom in order to prevent cropping the scroll to the bounds during zoom
+	private boolean skipBoundingBoxCheck = false;
+	// Required for pinch-zoom in order to force a wrap during the zoom
+	private boolean forceWrap = false;
+
 	public interface OnFirstLayoutListener {
 		/**
 		 * this generally means that the map is ready to go
@@ -373,7 +378,7 @@ public class MapView extends ViewGroup implements IMapView, MapViewConstants,
 	 * @param aZoomLevel
 	 *            the zoom level bound by the tile source
 	 */
-	int setZoomLevel(final int aZoomLevel) {
+	protected int setZoomLevel(final int aZoomLevel) {
 		final int minZoomLevel = getMinZoomLevel();
 		final int maxZoomLevel = getMaxZoomLevel();
 
@@ -1007,22 +1012,25 @@ public class MapView extends ViewGroup implements IMapView, MapViewConstants,
 	@Override
 	public void scrollTo(int x, int y) {
 		final int worldSize = TileSystem.MapSize(this.getZoomLevel(false));
-		while (x < 0) {
-			x += worldSize;
-		}
-		while (x >= worldSize) {
-			x -= worldSize;
-		}
-		while (y < 0) {
-			y += worldSize;
-		}
-		while (y >= worldSize) {
-			y -= worldSize;
+
+		if(mScrollableAreaLimit == null || isAnimating() || forceWrap) {
+			while (x < 0) {
+				x += worldSize;
+			}
+			while (x >= worldSize) {
+				x -= worldSize;
+			}
+			while (y < 0) {
+				y += worldSize;
+			}
+			while (y >= worldSize) {
+				y -= worldSize;
+			}
 		}
 
-		if (mScrollableAreaLimit != null) {
+		if (mScrollableAreaLimit != null && !skipBoundingBoxCheck) {
 			final int zoomDiff = microsoft.mappoint.TileSystem.getMaximumZoomLevel()
-					- getZoomLevel(false);
+					- getZoomLevel(true);
 			final int minX = (mScrollableAreaLimit.left >> zoomDiff);
 			final int minY = (mScrollableAreaLimit.top >> zoomDiff);
 			final int maxX = (mScrollableAreaLimit.right >> zoomDiff);
@@ -1087,6 +1095,7 @@ public class MapView extends ViewGroup implements IMapView, MapViewConstants,
 
 		// Make the upper-left corner 0,0
 		c.translate(getScrollX(), getScrollY());
+
 
 		// Scale the canvas
 		mRotateScaleMatrix.preScale(mMultiTouchScale, mMultiTouchScale,
@@ -1178,11 +1187,17 @@ public class MapView extends ViewGroup implements IMapView, MapViewConstants,
 						mRotateScalePoint);
 				Point p = getProjection().toMercatorPixels(mRotateScalePoint.x,
 						mRotateScalePoint.y, null);
+				forceWrap = true;
+				skipBoundingBoxCheck = true;
 				scrollTo(p.x - getWidth() / 2, p.y - getHeight() / 2);
+				forceWrap = false;
+				skipBoundingBoxCheck = false;
 			}
 
 			// Adjust the zoomLevel
+			forceWrap = true;
 			setZoomLevel(mZoomLevel + scaleDiffInt);
+			forceWrap = false;
 		}
 
 		// reset scale

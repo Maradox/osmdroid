@@ -415,10 +415,10 @@ public class MapController implements IMapController, OnFirstLayoutListener {
 		p = mMapView.getProjection().toMercatorPixels(p.x, p.y, p);
 		// The points provided are "center", we want relative to upper-left for scrolling
 		p.offset(-mMapView.getWidth() / 2, -mMapView.getHeight() / 2);
-		mMapView.mIsAnimating.set(false);
 		//scrolls to the point of user input
 		//no overflow detected
 		mMapView.scrollTo(p.x, p.y);
+		mMapView.mIsAnimating.set(false);
 		setZoom(mMapView.mTargetZoomLevel.get());
 		mMapView.mMultiTouchScale = 1f;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
