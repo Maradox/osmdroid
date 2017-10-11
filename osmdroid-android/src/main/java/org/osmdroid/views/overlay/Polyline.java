@@ -61,6 +61,8 @@ public class Polyline extends OverlayWithIW {
 	private final Point mTempPoint1 = new Point();
 	private final Point mTempPoint2 = new Point();
 
+	private boolean wrapEnabled = true;
+
 	protected OnClickListener mOnClickListener;
 
 	/** Use {@link #Polyline()} instead */
@@ -352,7 +354,7 @@ public class Polyline extends OverlayWithIW {
 
 			// check for lines exceeding 180° in longitude, or lines crossing to another map:
 			// cut line into two segments
-			if ((Math.abs(screenPoint1.x - screenPoint0.x) > halfMapSize)
+			if (wrapEnabled && (Math.abs(screenPoint1.x - screenPoint0.x) > halfMapSize)
 					// check for lines crossing the southern limit
 					|| (screenPoint1.y >= southLimit) != (screenPoint0.y >= southLimit)) {
 				// handle x and y coordinates separately
@@ -534,6 +536,14 @@ public class Polyline extends OverlayWithIW {
 			}
 		} else
 			return touched;
+	}
+
+	public boolean isWrapEnabled() {
+		return wrapEnabled;
+	}
+
+	public void setWrapEnabled(boolean wrapEnabled) {
+		this.wrapEnabled = wrapEnabled;
 	}
 
 	//-- Polyline events listener interfaces ------------------------------------
